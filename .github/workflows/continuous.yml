@@ -1,20 +1,19 @@
-# (c) Srevin Saju 2020. All rights reserved
-# Licensed under MIT License
-# Continuous Integration to release configured AppImages for Altus
-
-name: Continuous
+name: Release
 
 on:
   workflow_dispatch:
   push:
     tags:
-      - "*.*"
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
-  AppImage:
+  linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Enable Corepack
         run: corepack enable
@@ -23,62 +22,60 @@ jobs:
         with:
           node-version: 22
           cache: "yarn"
-
-      - name: Current Directory Structure
-        run: |
-          ls 
-          git describe --tags --always
-
-      - name: Build Altus
-        run: |
-          corepack enable
-          yarn install
-          yarn run make -p linux
-
-      - name: Upload Appimage
-        uses: actions/upload-artifact@v4.4.0
-        with:
-          name: AppImage
-          path: "out/make/*.AppImage"
-
-  Darwin:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: "yarn"
-
-      - name: Current Directory Structure
-        run: |
-          ls 
-          git describe --tags --always
 
       - name: Install dependencies
         run: |
-          corepack enable
-          yarn install
+          yarn install --immutable
 
-      - name: Build Altus
+      - name: Build Linux packages
+        run: |
+          yarn run make -p linux
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4.4.0
+        with:
+          name: linux-artifacts
+          path: |
+            out/make/**/*.AppImage
+            out/make/**/*.deb
+            out/make/**/*.rpm
+          if-no-files-found: error
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: |
+          yarn install --immutable
+
+      - name: Build macOS packages
         run: |
           yarn run make -p darwin --arch x64
           yarn run make -p darwin --arch arm64
 
-      - name: Upload DMG
+      - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4.4.0
         with:
-          name: DMG
-          path: "out/make/*.dmg"
+          name: macos-artifacts
+          path: |
+            out/make/**/*.dmg
+            out/make/**/*.zip
+          if-no-files-found: error
 
-  Windows:
+  windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Enable Corepack
         run: corepack enable
@@ -87,37 +84,42 @@ jobs:
         with:
           node-version: 22
 
-      - name: Current Directory Structure
+      - name: Install dependencies
         run: |
-          ls 
-          git describe --tags --always
+          yarn install --immutable
 
-      - name: Build Altus
+      - name: Build Windows packages
         run: |
-          corepack enable
-          yarn install
           yarn run make -p win32
 
-      - name: Upload EXE
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4.4.0
         with:
-          name: EXE
-          path: "out/make/*.exe"
+          name: windows-artifacts
+          path: |
+            out/make/**/*.exe
+            out/make/**/*.nupkg
+          if-no-files-found: error
 
-  Release:
-    needs: [AppImage, Windows, Darwin]
+  release:
+    needs: [linux, macos, windows]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/download-artifact@v4.1.7
-
-      - name: Release
-        uses: marvinpinto/action-automatic-releases@v1.2.1
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4.1.7
         with:
-          prerelease: false
-          files: |
-            AppImage
-            DMG
-            EXE
+          path: dist
 
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/**/*.AppImage
+            dist/**/*.deb
+            dist/**/*.rpm
+            dist/**/*.dmg
+            dist/**/*.zip
+            dist/**/*.exe
+            dist/**/*.nupkg
