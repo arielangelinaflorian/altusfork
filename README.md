@@ -1,102 +1,105 @@
-# Altus
+# Altus Fork
 
-**Altus** is an Electron-based WhatsApp client with themes and multiple account support, available for Windows, Mac and Linux!
+Fork personal de Altus orientado a una sola sesion de WhatsApp Web con mejor experiencia de uso en escritorio.
 
-## Installation
+Este proyecto ya no persigue los objetivos clasicos de Altus original. La direccion actual es:
 
-### Windows
+- una sola sesion de calidad;
+- recuperacion rapida cuando el `webview` se degrada;
+- menos complejidad accidental;
+- UX sobria y util para uso diario.
 
-- Download the `.exe` file from the [latest release](https://github.com/amanharwara/altus/releases/latest)
-- Run the file and follow the setup wizard
+## Estado actual
 
-If you see a "Windows protected your PC" error, it's because Altus is not signed. If you have doubts you can verify the file is safe using something like VirusTotal or any other antivirus software.
-To continue with the installation,
+Este fork mantiene Electron y SolidJS, pero reduce el enfoque en features secundarios como temas o multi-sesion.
 
-- Click on "More info"
-- Click "Run anyway"
+Cambios principales frente a Altus original:
 
-### macOS
+- flujo principal single-session;
+- menos peso heredado de multi-sesion;
+- herramientas de sesion desde menu y tray;
+- reciclado manual y automatico del `webview`;
+- tray mejorado;
+- configuracion mas limpia y en espanol;
+- instrumentacion basica para observar degradacion y tiempos de carga.
 
-- Download one of the `.dmg` files from [latest release](https://github.com/amanharwara/altus/releases/latest)
-  - If you're on an Intel mac, download the regular `.dmg` file
-  - If you're on an M-series mac, download the `-arm64.dmg` file
-- Open the dmg file
-- Drag the `Altus` icon onto the `Applications` icon as instructed
+## Filosofia del fork
 
-If you're on an M-series (i.e. arm) macOS, you'll need to run the following command, otherwise you'll get a `Altus is damaged and cannot be opened.` error.
+La prioridad no es bajar RAM como metrica aislada.
 
-```console
-sudo xattr -d com.apple.quarantine /Applications/Altus.app
+La prioridad es que WhatsApp Web siga sintiendose rapido y recuperable durante uso prolongado. Si Chromium envejece peor que Firefox en sesiones largas, este fork favorece una recuperacion rapida de la sesion antes que obligarte a cerrar y abrir toda la app.
+
+## Funciones utiles
+
+- `Session -> Reload Session`
+- `Session -> Recycle Webview`
+- `Session -> Clear Session Cache`
+- `Session -> Show Session Diagnostics`
+- refresh rapido desde el tray
+- auto-reciclado conservador cuando la app lleva suficiente tiempo abierta y queda fuera de foco
+
+## Desarrollo local
+
+El repo ya incluye entorno Nix y comandos base.
+
+### Requisitos
+
+- `nix`
+- `direnv`
+
+### Entrar al entorno
+
+```bash
+direnv allow
 ```
 
-### Linux
+### Instalar dependencias
 
-- Download the `.AppImage` file from the [latest release](https://github.com/amanharwara/altus/releases/latest)
-- Make sure it is executable by running `chmod +x ./Altus-*.AppImage` in the same directory
-- Run the AppImage by either double-clicking it or running `./Altus-*.AppImage`
+```bash
+make install
+```
 
-There are separate tools like [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) that make it easier to run the file and integrate it into your DE.
+### Desarrollo
 
-## Features
+```bash
+make dev
+```
 
-**Altus** uses the GitHub-produced Electron framework to wrap around WhatsApp Web and add extra features to it.
+### Desarrollo con trazas de rendimiento
 
-- **Multiple Account Support**: As of v2.0, you can use multiple WhatsApp accounts simultaneously!
-- **Native notification support** for all of the platforms. Clicking the notification opens that specific chat!
-- **Online Indicator**: Shows an indicator at the bottom-left corner of the chats that are online!
-- **Dark mode** for when you need to chill out your eyes in the night (or even in the day)
-- **Custom Theme Support**: Write your own CSS theme for WhatsApp or use the in-built Theme Customizer to create a new one just by picking colors!
-- **Available for most desktop platforms** including Windows (7 or above), Linux and MacOS.
-- **Tray icon** so you can minimize the app completely and still receive notifications.
+```bash
+make perf-dev
+```
 
-## Feature Requests
+### Build local
 
-In order to submit a feature request, create a [new issue](https://github.com/amanharwara/altus/issues/new) with the label `enhancement`.
+```bash
+make build
+make package
+make make
+```
 
-Please make sure that you provide a helpful description of your feature request. If possible, try implementing the feature yourself by forking this repository and then creating a pull request.
+## Releases
 
-## Screenshots
+Las releases se generan desde GitHub Actions cuando se empuja un tag con formato `v*`.
 
-### First Start
+Ejemplo:
 
-![Altus First Start](./img/Altus-First-Start.png)
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
 
-### Default Theme
+El workflow publica los artefactos soportados por Electron Forge en GitHub Releases.
 
-![Altus Default Theme](./img/Altus-Default-Theme.png)
+## Seguridad y datos de sesion
 
-### "Dark Plus" Theme
+Los datos de la sesion de WhatsApp no se guardan en este repositorio.
 
-![Altus Dark Theme](./img/Altus-Dark-Theme.png)
+Electron guarda la sesion y la particion persistente en el directorio `userData` del sistema, normalmente fuera del repo. En Linux eso suele vivir bajo `~/.config/Altus/` o ruta equivalente, incluyendo `Partitions/primary`.
 
-## Acknowledgements
+Publicar este repositorio no publica tu sesion, salvo que exportes o subas manualmente esos directorios externos.
 
-Below is the list of the dependencies that helped me greatly to create this app.
+## Alcance
 
-#### Dark-Whatsapp [(vednoc/dark-whatsapp)](https://github.com/vednoc/dark-whatsapp) - used as the base for the dark theme. A really cool project, you should definitely check it out!
-
----
-
-#### Inter [rsms/inter](https://github.com/rsms/inter) - The font used in Altus.
-
----
-
-#### electron-store [(sindresorhus/electron-store)](https://github.com/sindresorhus/electron-store) - used to store information of settings, tabs and themes
-
-## Contributors
-
-Below is the list of contributors who have contributed to Altus by creating a feature or helping fix an issue.
-
-#### [Melvin-Abraham](https://github.com/Melvin-Abraham) - Helped fix issues #55, #53
-
-#### [Dylan McDougall](https://github.com/dmcdo) - PR #10 (Added feature - Confirmation Dialog on close)
-
-#### [Dafnik](https://github.com/Dafnik) - PR #5 (Helped fix issue #4)
-
-#### [Marcelo Zapatta](https://github.com/MarceloZapatta) - PR #77 (Fixed #23 by adding tray icon support on Linux)
-
-#### [Maicol Battistini](https://github.com/maicol07) - PR #153 (Added Italian translation)
-
-#### [Nicolás González Meneses](https://github.com/ngmoviedo) - PR #163 (Added Spanish translation)
-
-#### [Hugo Rocha de Moura](https://github.com/hugorochaffs) - PR #185 (Added Portuguese(pt) translation)
+Este fork no busca convertirse en una plataforma nueva ni en un laboratorio de features. Si una idea no mejora la experiencia principal de usar WhatsApp Web todos los dias, probablemente no pertenece aqui.
