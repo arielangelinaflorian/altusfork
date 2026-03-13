@@ -27,11 +27,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          yarn install --immutable
+          corepack yarn install --immutable
 
       - name: Build Linux packages
         run: |
-          yarn run make -p linux
+          corepack yarn run make -p linux
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4.4.0
@@ -60,12 +60,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          yarn install --immutable
+          corepack yarn install --immutable
 
       - name: Build macOS packages
         run: |
-          yarn run make -p darwin --arch x64
-          yarn run make -p darwin --arch arm64
+          corepack yarn run make -p darwin --arch x64
+          corepack yarn run make -p darwin --arch arm64
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4.4.0
@@ -92,11 +92,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          yarn install --immutable
+          corepack yarn install --immutable
 
       - name: Build Windows packages
         run: |
-          yarn run make -p win32
+          corepack yarn run make -p win32
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4.4.0
