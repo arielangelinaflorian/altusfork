@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <linearGradient id="bubble" x1="206" y1="142" x2="829" y2="863" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2FD6D5"/>
+      <stop offset="1" stop-color="#22C7CC"/>
+    </linearGradient>
+    <filter id="shadow" x="133" y="112" width="758" height="789" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="16"/>
+      <feGaussianBlur stdDeviation="20"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.038 0 0 0 0 0.431 0 0 0 0 0.454 0 0 0 0.18 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <path
+      d="M286 140H688C772.5 140 841 208.5 841 293V589.5C841 650.8 804.8 706.4 748.7 731.4L711.8 863.7C707.2 880.1 686.9 885.1 675.5 872.4L560.6 744H286C201.5 744 133 675.5 133 591V293C133 208.5 201.5 140 286 140Z"
+      fill="url(#bubble)"
+    />
+  </g>
+
+  <path
+    d="M420 613C383 613 350 594 333 565C315 535 315 499 334 465L410 332C426 304 455 288 486 288C517 288 546 304 563 332L599 394"
+    stroke="white"
+    stroke-width="52"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M575 602C553 619 526 628 497 628C448 628 404 601 381 560"
+    stroke="white"
+    stroke-width="52"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M563 332C579 304 608 288 639 288C670 288 698 304 715 332L781 408"
+    stroke="white"
+    stroke-width="52"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M670 612C647 612 624 603 607 586L562 536"
+    stroke="white"
+    stroke-width="52"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M457 507L647 292"
+    stroke="white"
+    stroke-width="52"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M633 289L791 251L755 407"
+    stroke="white"
+    stroke-width="52"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
