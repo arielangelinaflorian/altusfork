@@ -3,6 +3,7 @@ import {
   contextBridge,
   ipcRenderer,
   type IpcRendererEvent,
+  webFrame,
 } from "electron";
 import { ElectronTabStoreIpcApi } from "./stores/tabs/common";
 import { ElectronThemeStoreIpcApi } from "./stores/themes/common";
@@ -52,6 +53,11 @@ const sessionTools = {
     ipcRenderer.invoke("clear-session-cache", partition),
   signalRefreshActivity: async () =>
     ipcRenderer.invoke("signal-session-refresh-activity"),
+  getWebviewMemory: async (webContentsId: number | null) =>
+    ipcRenderer.invoke("get-webview-memory", webContentsId),
+  clearRendererCache: () => {
+    webFrame.clearCache();
+  },
 };
 
 contextBridge.exposeInMainWorld("electronTabStore", electronTabStoreIpcApi);

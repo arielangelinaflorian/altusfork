@@ -1,4 +1,4 @@
-import { ipcRenderer } from "electron";
+import { ipcRenderer, webFrame } from "electron";
 import { Theme } from "./stores/themes/common";
 import { formatSelectedText } from "./utils/webview/formatSelectedText";
 import { getLuminance } from "color2k";
@@ -239,4 +239,45 @@ ipcRenderer.on("set-id", (e, id) => {
   }
 
   document.body.dataset.tabId = id;
+});
+
+let blurCleanupTimer: NodeJS.Timeout | undefined;
+
+window.addEventListener("blur", () => {
+  if (blurCleanupTimer) clearTimeout(blurCleanupTimer);
+  blurCleanupTimer = setTimeout(() => {
+    performSoftCleanup();
+  }, 5000);
+});
+
+window.addEventListener("focus", () => {
+  if (blurCleanupTimer) {
+    clearTimeout(blurCleanupTimer);
+    blurCleanupTimer = undefined;
+  }
+});
+
+function performSoftCleanup() {
+  const start = Date.now();
+  try {
+    webFrame.clearCache();
+    if (typeof window.gc === "function") {
+      window.gc();
+      ipcRenderer.send("perf-mark", {
+        event: "webview:soft-cleanup",
+        detail: { elapsedMs: Date.now() - start, success: true },
+      });
+    } else {
+      ipcRenderer.send("perf-mark", {
+        event: "webview:soft-cleanup-no-gc",
+        detail: { elapsedMs: Date.now() - start, success: true },
+      });
+    }
+  } catch (error) {
+    console.error("[altus-preload] Soft cleanup failed:", error);
+  }
+}
+
+ipcRenderer.on("soft-cleanup", () => {
+  performSoftCleanup();
 });

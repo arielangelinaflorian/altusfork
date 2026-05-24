@@ -13,6 +13,8 @@ import {
   recycleActiveWebview,
   stableTabArray,
   tabStore,
+  getActiveWebviewElement,
+  getActivePartitionId,
 } from "./stores/tabs/solid";
 import WebView from "./components/WebView";
 import TabsList from "./components/TabsList";
@@ -59,6 +61,59 @@ const App: Component = () => {
     let lastInteractionAt = Date.now();
     const awayGraceMs = 60_000;
     const recentInteractionGuardMs = 15_000;
+
+    const checkMemoryUsage = async () => {
+      if (isUserPresent()) return;
+      const activeWebview = getActiveWebviewElement();
+      if (!activeWebview) return;
+      try {
+        const webContentsId = activeWebview.getWebContentsId();
+        if (!webContentsId) return;
+        const memoryInfo = await window.sessionTools.getWebviewMemory(webContentsId);
+        if (memoryInfo) {
+          const privateMb = memoryInfo.privateBytes / 1024;
+          window.perfDebug.mark("renderer:memory-guard-check", {
+            privateMb: Math.round(privateMb),
+            thresholdMb: 750,
+          });
+          if (privateMb > 750) {
+            window.perfDebug.mark("renderer:memory-guard-recycle-triggered", {
+              privateMb: Math.round(privateMb),
+            });
+            recycleActiveWebview();
+          }
+        }
+      } catch (err) {
+        // webview might not be fully loaded
+      }
+    };
+
+    const checkCacheSize = async () => {
+      if (isUserPresent()) return;
+      try {
+        const partition = getActivePartitionId();
+        const diagnostics = await window.sessionTools.getDiagnostics(partition);
+        // Auto-clear disk cache if it has grown above 150 MB while user is idle
+        const cacheMb = diagnostics.cacheSizeBytes / 1024 / 1024;
+        window.perfDebug.mark("renderer:cache-guard-check", {
+          cacheMb: Math.round(cacheMb),
+          thresholdMb: 150,
+        });
+        if (cacheMb > 150) {
+          window.perfDebug.mark("renderer:cache-guard-clear-triggered", {
+            cacheMb: Math.round(cacheMb),
+          });
+          await window.sessionTools.clearCache(partition);
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    const memoryGuardInterval = setInterval(() => {
+      void checkMemoryUsage();
+      void checkCacheSize();
+    }, 5 * 60_000);
 
     const markInteraction = () => {
       lastInteractionAt = Date.now();
@@ -126,6 +181,9 @@ const App: Component = () => {
         if (shouldBlockRecycle() && !isWindowHidden) return;
 
         const reason = isWindowHidden ? "tray-interval" : "blur-idle";
+        if (reason === "blur-idle" && !getSettingValue("autoRecycleOnBlur")) {
+          return;
+        }
         recycle(reason);
       }, delayMs);
     };
@@ -144,6 +202,17 @@ const App: Component = () => {
         becameAwayAt = Date.now();
       }
       scheduleAutoRecycleCheck();
+
+      // Trigger soft cleanup
+      window.sessionTools.clearRendererCache();
+      const activeWebview = getActiveWebviewElement();
+      if (activeWebview) {
+        try {
+          activeWebview.send("soft-cleanup");
+        } catch (e) {
+          // ignore
+        }
+      }
     });
 
     window.windowActions.onFocused(() => {
@@ -161,6 +230,17 @@ const App: Component = () => {
         becameAwayAt = Date.now();
       }
       scheduleAutoRecycleCheck();
+
+      // Trigger soft cleanup
+      window.sessionTools.clearRendererCache();
+      const activeWebview = getActiveWebviewElement();
+      if (activeWebview) {
+        try {
+          activeWebview.send("soft-cleanup");
+        } catch (e) {
+          // ignore
+        }
+      }
     });
 
     window.windowActions.onShown(() => {
@@ -193,12 +273,21 @@ const App: Component = () => {
     const interactionEvents: (keyof WindowEventMap)[] = [
       "pointerdown",
       "keydown",
-      "mousemove",
     ];
 
     for (const eventName of interactionEvents) {
       window.addEventListener(eventName, markInteraction, { passive: true });
     }
+
+    let lastMouseMoveLogged = 0;
+    const onMouseMove = () => {
+      const now = Date.now();
+      if (now - lastMouseMoveLogged > 2000) {
+        lastMouseMoveLogged = now;
+        markInteraction();
+      }
+    };
+    window.addEventListener("mousemove", onMouseMove, { passive: true });
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     if (!window.perfDebug.enabled || !("PerformanceObserver" in window)) {
@@ -233,9 +322,11 @@ const App: Component = () => {
 
     onCleanup(() => {
       clearAutoRecycleTimer();
+      if (memoryGuardInterval) clearInterval(memoryGuardInterval);
       for (const eventName of interactionEvents) {
         window.removeEventListener(eventName, markInteraction);
       }
+      window.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       observer?.disconnect();
     });

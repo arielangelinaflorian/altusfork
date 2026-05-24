@@ -61,6 +61,25 @@ const TabsList: Component = () => {
       if (!partition) return;
 
       const diagnostics = await window.sessionTools.getDiagnostics(partition);
+      
+      const activeWebview = getActiveWebviewElement();
+      let memoryDetail = "Webview Memory: unavailable";
+      if (activeWebview) {
+        try {
+          const webContentsId = typeof activeWebview.getWebContentsId === "function"
+            ? activeWebview.getWebContentsId()
+            : null;
+          const memoryInfo = await window.sessionTools.getWebviewMemory(webContentsId);
+          if (memoryInfo) {
+            const privateBytes = formatBytes(memoryInfo.privateBytes * 1024);
+            const residentBytes = formatBytes(memoryInfo.residentSetBytes * 1024);
+            memoryDetail = `Webview Memory (Private): ${privateBytes}\nWebview Memory (Resident): ${residentBytes}`;
+          }
+        } catch (e) {
+          memoryDetail = `Webview Memory Error: ${e instanceof Error ? e.message : String(e)}`;
+        }
+      }
+
       await window.showMessageBox({
         type: "info",
         title: "Session Diagnostics",
@@ -74,6 +93,8 @@ const TabsList: Component = () => {
           `Cookies count: ${diagnostics.cookiesCount}`,
           `Partition path exists: ${diagnostics.partitionPathExists ? "yes" : "no"}`,
           `Partition path: ${diagnostics.partitionPath}`,
+          "",
+          memoryDetail,
         ].join("\n"),
       });
     })

@@ -10,6 +10,7 @@ import {
   session,
   shell,
   Tray,
+  webContents,
 } from "electron";
 import fs from "fs";
 import path from "path";
@@ -33,6 +34,8 @@ import {
 import AutoLaunch from "auto-launch";
 import electronDl from "electron-dl";
 import contextMenu from "electron-context-menu";
+
+app.commandLine.appendSwitch("js-flags", "--expose-gc");
 
 const perfDebugEnabled = process.env.ALTUS_DEBUG_PERF === "1";
 const perfDebugStartedAt = Date.now();
@@ -688,6 +691,23 @@ function addIPCHandlers(mainWindow: BrowserWindow) {
       partitionPath,
       partitionPathExists: fs.existsSync(partitionPath),
     };
+  });
+
+  ipcMain.handle("get-webview-memory", async (_event, webContentsId: number | null) => {
+    try {
+      let wc;
+      if (typeof webContentsId === "number" && webContentsId > 0) {
+        wc = webContents.fromId(webContentsId);
+      }
+      if (!wc) {
+        wc = webContents.getAllWebContents().find((w) => w.getType() === "webview");
+      }
+      if (!wc) return null;
+      return await (wc as any).getProcessMemoryInfo();
+    } catch (error) {
+      console.error("Error fetching webview memory info:", error);
+      return null;
+    }
   });
 
   ipcMain.handle("clear-session-cache", async (_event, partitionId: string) => {

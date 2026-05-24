@@ -57,6 +57,11 @@ declare global {
       }>;
       clearCache: (partition: string) => Promise<void>;
       signalRefreshActivity: () => Promise<void>;
+      getWebviewMemory: (webContentsId: number | null) => Promise<{
+        privateBytes: number;
+        residentSetBytes: number;
+      } | null>;
+      clearRendererCache: () => void;
     };
     perfDebug: {
       enabled: boolean;
